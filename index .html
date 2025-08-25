@@ -1,0 +1,1733 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامج تسجيل القراءة التفاعلي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Arabic:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans Arabic', 'Amiri', 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 50%, #fce4ec 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(33, 150, 243, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(156, 39, 176, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(103, 58, 183, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 60% 60%, rgba(255, 193, 7, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
+        }
+        
+        .glass-card-dark {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .reading-text {
+            line-height: 3;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a202c;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            letter-spacing: 0.5px;
+            word-spacing: 4px;
+            font-family: 'Noto Sans Arabic', 'Amiri', serif;
+        }
+        
+        .timer-circle {
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 1s linear;
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+        }
+        
+        .timer-container {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(145deg, #1976d2, #7b1fa2);
+            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+            font-weight: 600;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(25, 118, 210, 0.6);
+        }
+        
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-gradient:hover::before {
+            left: 100%;
+        }
+        
+        .btn-success {
+            background: linear-gradient(145deg, #10b981, #059669);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(145deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        
+        .btn-warning:hover {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.6);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.6);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .stats-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        
+        .word-highlight {
+            background: linear-gradient(120deg, #fef3c7, #fde68a);
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 2px solid #f59e0b;
+            font-weight: 700;
+            font-size: 1.1em;
+            animation: pulse 2s infinite;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .celebration {
+            animation: celebrate 0.6s ease-in-out;
+        }
+        
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .floating-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .recording-pulse {
+            animation: recordingPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes recordingPulse {
+            0%, 100% { 
+                background: linear-gradient(145deg, #ef4444, #dc2626);
+                box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            }
+            50% { 
+                background: linear-gradient(145deg, #f87171, #ef4444);
+                box-shadow: 0 8px 25px rgba(239, 68, 68, 0.8);
+            }
+        }
+        
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+            margin-left: 8px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <!-- نظام الإشعارات -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+                📚 برنامج تسجيل القراءة التفاعلي
+            </h1>
+            <p class="text-lg text-gray-600 font-medium">
+                طور مهاراتك في القراءة مع التوقيت والإحصائيات المفصلة
+            </p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Reading Area -->
+            <div class="lg:col-span-2">
+                <div class="glass-card rounded-2xl p-6 mb-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <span class="floating-icon">📖</span>
+                            <span class="mr-3">نص القراءة</span>
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="changeTextSize('increase')" class="btn-gradient text-white px-4 py-2 rounded-lg text-sm">
+                                أ+
+                            </button>
+                            <button onclick="changeTextSize('decrease')" class="btn-gradient text-white px-4 py-2 rounded-lg text-sm">
+                                أ-
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <select id="textSelect" onchange="loadSelectedText()" class="w-full p-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none font-medium">
+                            <option value="0">النص الأول - التَّكْنُولُوجِيَا فِي حَيَاتِنَا</option>
+                            <option value="1">النص الثاني - حِمَايَةُ الْبِيئَةِ مَسْؤُولِيَّتُنَا</option>
+                            <option value="2">النص الثالث - أَهَمِّيَّةُ الْقِرَاءَةِ وَالْمُطَالَعَةِ</option>
+                        </select>
+                    </div>
+                    
+                    <div id="readingText" class="reading-text p-8 bg-gradient-to-br from-white to-blue-50 rounded-xl border-2 border-blue-200 min-h-[350px] shadow-inner">
+                        <!-- النص سيتم تحميله هنا -->
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <span class="floating-icon">🎮</span>
+                            <span class="mr-2">أدوات التحكم</span>
+                        </h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button id="startBtn" onclick="startReading()" class="btn-success text-white px-6 py-3 rounded-xl font-bold text-lg">
+                                🎯 ابدأ القراءة
+                            </button>
+                            <button id="pauseBtn" onclick="pauseReading()" class="btn-warning text-white px-6 py-3 rounded-xl font-bold text-lg" disabled>
+                                ⏸️ توقف
+                            </button>
+                            <button id="stopBtn" onclick="stopReading()" class="btn-danger text-white px-6 py-3 rounded-xl font-bold text-lg" disabled>
+                                ⏹️ إنهاء
+                            </button>
+                            <button onclick="resetAll()" class="btn-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">
+                                🔄 إعادة تعيين
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <span class="floating-icon">🤖</span>
+                            <span class="mr-2">مساعدة القراءة الآلية</span>
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <button id="autoReadBtn" onclick="toggleAutoRead()" class="btn-success text-white px-6 py-3 rounded-xl font-bold text-lg">
+                                🔊 تشغيل القراءة الآلية
+                            </button>
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">سرعة القراءة:</label>
+                                <select id="readingSpeedSelect" onchange="updateReadingSpeed()" class="p-2 rounded-lg border border-gray-300 text-sm">
+                                    <option value="0.5">بطيء جداً</option>
+                                    <option value="0.7">بطيء</option>
+                                    <option value="1" selected>عادي</option>
+                                    <option value="1.3">سريع</option>
+                                    <option value="1.5">سريع جداً</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">الصوت:</label>
+                                <select id="voiceSelect" onchange="updateSelectedVoice()" class="p-2 rounded-lg border border-gray-300 text-sm flex-1">
+                                    <option value="">تحميل الأصوات...</option>
+                                </select>
+                            </div>
+                            <button onclick="testVoice()" class="btn-gradient text-white px-4 py-2 rounded-lg text-sm">
+                                🎵 اختبار الصوت
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium text-gray-700">سرعة المؤشر:</label>
+                                <input type="range" id="cursorSpeedRange" min="0.5" max="3" step="0.1" value="1" onchange="updateCursorSpeed()" class="flex-1">
+                                <span id="cursorSpeedValue" class="text-sm font-bold text-blue-600">1.0x</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="syncWithAudio" checked onchange="toggleSyncWithAudio()" class="rounded">
+                                <label for="syncWithAudio" class="text-sm font-medium text-gray-700">مزامنة مع الصوت</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-200 pt-4">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center">
+                            <span class="floating-icon">🎙️</span>
+                            <span class="mr-2">التسجيل الصوتي</span>
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button id="recordBtn" onclick="startRecording()" class="btn-gradient text-white px-6 py-3 rounded-xl font-bold text-lg">
+                                🔴 ابدأ التسجيل
+                            </button>
+                            <button id="stopRecordBtn" onclick="stopRecording()" class="btn-danger text-white px-6 py-3 rounded-xl font-bold text-lg" disabled>
+                                ⏹️ إيقاف التسجيل
+                            </button>
+                            <div id="recordingStatus" class="flex items-center justify-center text-gray-600 font-medium">
+                                جاهز للتسجيل
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats and Timer Sidebar -->
+            <div class="space-y-6">
+                <!-- Timer -->
+                <div class="timer-container rounded-2xl p-6 text-center">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+                        <span class="floating-icon">⏱️</span>
+                        <span class="mr-2">المؤقت</span>
+                    </h3>
+                    <div class="relative w-32 h-32 mx-auto mb-4">
+                        <svg class="w-32 h-32 transform -rotate-90">
+                            <circle cx="64" cy="64" r="45" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+                            <circle id="timerCircle" cx="64" cy="64" r="45" stroke="#3b82f6" stroke-width="8" fill="none" class="timer-circle"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="timerDisplay" class="text-2xl font-bold text-gray-800">00:00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Stats -->
+                <div class="stats-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="floating-icon">📊</span>
+                        <span class="mr-2">الإحصائيات المباشرة</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
+                            <div class="text-sm text-gray-600 mb-1">الكلمات المقروءة</div>
+                            <div id="wordsRead" class="text-2xl font-bold text-blue-600">0</div>
+                        </div>
+                        <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
+                            <div class="text-sm text-gray-600 mb-1">سرعة القراءة</div>
+                            <div id="readingSpeed" class="text-2xl font-bold text-green-600">0 ك/د</div>
+                        </div>
+                        <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
+                            <div class="text-sm text-gray-600 mb-1">التقدم</div>
+                            <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                <div id="progressBar" class="progress-bar h-3 rounded-full" style="width: 0%"></div>
+                            </div>
+                            <div id="progressText" class="text-sm font-bold text-purple-600">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session History -->
+                <div class="stats-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="floating-icon">📈</span>
+                        <span class="mr-2">سجل الجلسات</span>
+                    </h3>
+                    <div id="sessionHistory" class="space-y-3 max-h-60 overflow-y-auto">
+                        <div class="text-center text-gray-500 py-4">
+                            لا توجد جلسات مسجلة بعد
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speed Chart -->
+                <div class="stats-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="floating-icon">🚀</span>
+                        <span class="mr-2">مخطط السرعة</span>
+                    </h3>
+                    <div class="bg-white rounded-xl p-4">
+                        <canvas id="speedChart" width="300" height="200"></canvas>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <button onclick="clearSpeedChartData()" class="btn-gradient text-white px-4 py-2 rounded-lg text-sm">
+                            🗑️ مسح بيانات السرعة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Chart -->
+                <div class="stats-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="floating-icon">📊</span>
+                        <span class="mr-2">مخطط التقدم</span>
+                    </h3>
+                    <div class="bg-white rounded-xl p-4">
+                        <canvas id="progressChart" width="300" height="200"></canvas>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <button onclick="clearProgressChartData()" class="btn-gradient text-white px-4 py-2 rounded-lg text-sm">
+                            🗑️ مسح بيانات التقدم
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audio Recordings -->
+                <div class="stats-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <span class="floating-icon">🎵</span>
+                        <span class="mr-2">التسجيلات الصوتية</span>
+                    </h3>
+                    <div id="audioRecordings" class="space-y-3 max-h-60 overflow-y-auto">
+                        <div class="text-center text-gray-500 py-4">
+                            لا توجد تسجيلات صوتية بعد
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // النصوص المتاحة
+        const texts = [
+            {
+                title: "التَّكْنُولُوجِيَا فِي حَيَاتِنَا",
+                content: "تُعْتَبَرُ التَّكْنُولُوجِيَا جُزْءًا لَا يَتَجَزَّأُ مِنْ حَيَاتِنَا الْيَوْمِيَّةِ. فَمِنْ خِلَالِ الْهَوَاتِفِ الذَّكِيَّةِ وَالْحَاسُوبِ، نَسْتَطِيعُ التَّوَاصُلَ مَعَ الْأَصْدِقَاءِ وَالْعَائِلَةِ فِي جَمِيعِ أَنْحَاءِ الْعَالَمِ. كَمَا تُسَاعِدُنَا التَّكْنُولُوجِيَا فِي التَّعَلُّمِ مِنْ خِلَالِ الْمَنَصَّاتِ التَّعْلِيمِيَّةِ وَالْمَكْتَبَاتِ الرَّقْمِيَّةِ. وَفِي الْمَجَالِ الطِّبِّيِّ، تُمَكِّنُ الْأَطِبَّاءَ مِنْ تَشْخِيصِ الْأَمْرَاضِ بِدِقَّةٍ أَكْبَرَ وَعِلَاجِهَا بِطُرُقٍ حَدِيثَةٍ. لَكِنْ يَجِبُ عَلَيْنَا اسْتِخْدَامُ التَّكْنُولُوجِيَا بِحِكْمَةٍ وَعَدَمُ الْإِفْرَاطِ فِيهَا، حَتَّى لَا تُؤَثِّرَ سَلْبًا عَلَى صِحَّتِنَا وَعَلَاقَاتِنَا الِاجْتِمَاعِيَّةِ."
+            },
+            {
+                title: "حِمَايَةُ الْبِيئَةِ مَسْؤُولِيَّتُنَا",
+                content: "تُوَاجِهُ بِيئَتُنَا تَحَدِّيَاتٍ كَبِيرَةً فِي الْعَصْرِ الْحَدِيثِ، مِنْهَا التَّلَوُّثُ وَالِاحْتِبَاسُ الْحَرَارِيُّ وَتَدْمِيرُ الْغَابَاتِ. لِذَلِكَ، يَجِبُ عَلَى كُلِّ فَرْدٍ مِنَّا أَنْ يَتَحَمَّلَ مَسْؤُولِيَّتَهُ فِي حِمَايَةِ الْبِيئَةِ. يُمْكِنُنَا الْبَدْءُ بِخُطُوَاتٍ بَسِيطَةٍ مِثْلَ تَوْفِيرِ الْمَاءِ وَالْكَهْرَبَاءِ، وَإِعَادَةِ تَدْوِيرِ الْمَوَادِّ، وَاسْتِخْدَامِ وَسَائِلِ النَّقْلِ الصَّدِيقَةِ لِلْبِيئَةِ. كَمَا يُمْكِنُنَا زِرَاعَةُ الْأَشْجَارِ وَالنَّبَاتَاتِ فِي حَدَائِقِنَا وَمَدَارِسِنَا. إِنَّ الْعَمَلَ الْجَمَاعِيَّ وَالتَّعَاوُنَ بَيْنَ الْأَفْرَادِ وَالْمُؤَسَّسَاتِ ضَرُورِيٌّ لِضَمَانِ مُسْتَقْبَلٍ أَفْضَلَ لِلْأَجْيَالِ الْقَادِمَةِ."
+            },
+            {
+                title: "أَهَمِّيَّةُ الْقِرَاءَةِ وَالْمُطَالَعَةِ",
+                content: "تُعَدُّ الْقِرَاءَةُ مِنْ أَهَمِّ الْمَهَارَاتِ الَّتِي يَجِبُ عَلَى الْإِنْسَانِ إِتْقَانُهَا وَتَطْوِيرُهَا. فَهِيَ تَفْتَحُ أَمَامَنَا آفَاقًا وَاسِعَةً مِنَ الْمَعْرِفَةِ وَالثَّقَافَةِ، وَتُنَمِّي قُدْرَاتِنَا الْعَقْلِيَّةَ وَالْإِبْدَاعِيَّةَ. عِنْدَمَا نَقْرَأُ، نَكْتَسِبُ مُفْرَدَاتٍ جَدِيدَةً وَنُحَسِّنُ مِنْ أُسْلُوبِنَا فِي التَّعْبِيرِ وَالْكِتَابَةِ. كَمَا أَنَّ الْقِرَاءَةَ تُسَاعِدُنَا عَلَى فَهْمِ الْعَالَمِ مِنْ حَوْلِنَا وَتُوَسِّعُ مَدَارِكَنَا. وَمِنْ فَوَائِدِهَا أَيْضًا أَنَّهَا تُقَلِّلُ مِنَ التَّوَتُّرِ وَتُحَسِّنُ مِنَ التَّرْكِيزِ وَالذَّاكِرَةِ. لِذَلِكَ، يَنْبَغِي أَنْ نَجْعَلَ الْقِرَاءَةَ عَادَةً يَوْمِيَّةً فِي حَيَاتِنَا، وَأَنْ نَخْتَارَ الْكُتُبَ الَّتِي تُنَاسِبُ اهْتِمَامَاتِنَا وَتُثْرِي مَعْلُومَاتِنَا."
+            }
+        ];
+
+        // متغيرات التطبيق
+        let isReading = false;
+        let isPaused = false;
+        let startTime = null;
+        let pausedTime = 0;
+        let currentWordIndex = 0;
+        let words = [];
+        let timerInterval = null;
+        let currentTextIndex = 0;
+        let fontSize = 24;
+        let sessions = [];
+        
+        // متغيرات القراءة الآلية
+        let isAutoReading = false;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let autoReadSpeed = 1;
+        let cursorSpeed = 1;
+        let syncWithAudio = true;
+        let autoReadInterval = null;
+        let selectedVoice = null;
+        let availableVoices = [];
+        
+        // متغيرات التسجيل الصوتي
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let audioStream = null;
+        let recordingStartTime = null;
+        let recordingTimer = null;
+        
+        // متغيرات المخططات البيانية
+        let speedChart = null;
+        let progressChart = null;
+        let speedChartData = {
+            labels: [],
+            datasets: [{
+                label: 'سرعة القراءة (كلمة/دقيقة)',
+                data: [],
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        };
+        let progressChartData = {
+            labels: [],
+            datasets: [{
+                label: 'نسبة التقدم (%)',
+                data: [],
+                borderColor: 'rgb(16, 185, 129)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        };
+
+        // تحميل النص المحدد
+        function loadSelectedText() {
+            currentTextIndex = parseInt(document.getElementById('textSelect').value);
+            const text = texts[currentTextIndex];
+            words = text.content.split(' ');
+            
+            const readingTextDiv = document.getElementById('readingText');
+            readingTextDiv.innerHTML = words.map((word, index) => 
+                `<span id="word-${index}" class="cursor-pointer hover:bg-yellow-100 transition-colors duration-300 px-2 py-1 rounded-lg font-medium">${word}</span>`
+            ).join(' ');
+            
+            // تطبيق حجم الخط الحالي
+            readingTextDiv.style.fontSize = fontSize + 'px';
+            
+            resetReading();
+        }
+
+        // تغيير حجم الخط
+        function changeTextSize(action) {
+            if (action === 'increase' && fontSize < 36) {
+                fontSize += 3;
+            } else if (action === 'decrease' && fontSize > 18) {
+                fontSize -= 3;
+            }
+            
+            const readingTextElement = document.getElementById('readingText');
+            readingTextElement.style.fontSize = fontSize + 'px';
+            
+            // تحديث المسافات حسب حجم الخط
+            if (fontSize >= 30) {
+                readingTextElement.style.lineHeight = '3.5';
+                readingTextElement.style.wordSpacing = '6px';
+            } else if (fontSize >= 24) {
+                readingTextElement.style.lineHeight = '3.2';
+                readingTextElement.style.wordSpacing = '5px';
+            } else {
+                readingTextElement.style.lineHeight = '3';
+                readingTextElement.style.wordSpacing = '4px';
+            }
+        }
+
+        // تشغيل/إيقاف القراءة الآلية
+        function toggleAutoRead() {
+            if (isAutoReading) {
+                stopAutoRead();
+            } else {
+                startAutoRead();
+            }
+        }
+
+        // بدء القراءة الآلية
+        function startAutoRead() {
+            if (words.length === 0) return;
+            
+            // التأكد من توقف أي نطق سابق
+            speechSynthesis.cancel();
+            
+            isAutoReading = true;
+            const text = words.join(' ');
+            
+            // انتظار قصير للتأكد من إيقاف النطق السابق
+            setTimeout(() => {
+                // إنشاء كائن النطق
+                currentUtterance = new SpeechSynthesisUtterance(text);
+                
+                // إعدادات الصوت المحسنة
+                currentUtterance.lang = 'ar-SA'; // العربية السعودية
+                currentUtterance.rate = autoReadSpeed;
+                currentUtterance.pitch = 1.0;
+                currentUtterance.volume = 1.0;
+                
+                // استخدام الصوت المحدد أو البحث عن صوت عربي
+                if (selectedVoice) {
+                    currentUtterance.voice = selectedVoice;
+                    console.log('تم اختيار الصوت المحدد:', selectedVoice.name);
+                } else {
+                    const voices = speechSynthesis.getVoices();
+                    const arabicVoice = voices.find(voice => 
+                        voice.lang.includes('ar') || 
+                        voice.name.includes('Arabic') ||
+                        voice.name.includes('عربي')
+                    );
+                    
+                    if (arabicVoice) {
+                        currentUtterance.voice = arabicVoice;
+                        console.log('تم اختيار الصوت العربي:', arabicVoice.name);
+                    } else {
+                        console.log('لم يتم العثور على صوت عربي، سيتم استخدام الصوت الافتراضي');
+                    }
+                }
+                
+                // تحديث واجهة المستخدم
+                document.getElementById('autoReadBtn').innerHTML = '⏸️ إيقاف القراءة الآلية';
+                document.getElementById('autoReadBtn').classList.remove('btn-success');
+                document.getElementById('autoReadBtn').classList.add('btn-warning');
+                
+                // معالجة الأحداث
+                currentUtterance.onstart = () => {
+                    console.log('بدأ النطق');
+                    showNotification('🔊 بدأت القراءة الآلية', 'success', 2000);
+                };
+                
+                currentUtterance.onend = () => {
+                    console.log('انتهى النطق');
+                    stopAutoRead();
+                };
+                
+                currentUtterance.onerror = (event) => {
+                    console.error('خطأ في النطق:', event.error);
+                    showNotification('❌ خطأ في تشغيل الصوت: ' + event.error, 'error', 3000);
+                    stopAutoRead();
+                };
+                
+                currentUtterance.onpause = () => {
+                    console.log('تم إيقاف النطق مؤقتاً');
+                };
+                
+                currentUtterance.onresume = () => {
+                    console.log('تم استئناف النطق');
+                };
+                
+                // بدء تتبع الكلمات مع الصوت
+                if (syncWithAudio) {
+                    startWordTracking();
+                }
+                
+                // بدء النطق
+                try {
+                    speechSynthesis.speak(currentUtterance);
+                    console.log('تم بدء النطق بنجاح');
+                } catch (error) {
+                    console.error('خطأ في بدء النطق:', error);
+                    showNotification('❌ خطأ في تشغيل الصوت', 'error');
+                    stopAutoRead();
+                }
+            }, 100);
+        }
+
+        // إيقاف القراءة الآلية
+        function stopAutoRead() {
+            isAutoReading = false;
+            
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+            }
+            
+            if (autoReadInterval) {
+                clearInterval(autoReadInterval);
+                autoReadInterval = null;
+            }
+            
+            // تحديث واجهة المستخدم
+            document.getElementById('autoReadBtn').innerHTML = '🔊 تشغيل القراءة الآلية';
+            document.getElementById('autoReadBtn').classList.remove('btn-warning');
+            document.getElementById('autoReadBtn').classList.add('btn-success');
+        }
+
+        // تحديث سرعة القراءة الآلية
+        function updateReadingSpeed() {
+            autoReadSpeed = parseFloat(document.getElementById('readingSpeedSelect').value);
+            
+            if (isAutoReading && currentUtterance) {
+                // إعادة تشغيل بالسرعة الجديدة
+                stopAutoRead();
+                setTimeout(() => startAutoRead(), 100);
+            }
+        }
+
+        // تحديث سرعة المؤشر
+        function updateCursorSpeed() {
+            cursorSpeed = parseFloat(document.getElementById('cursorSpeedRange').value);
+            document.getElementById('cursorSpeedValue').textContent = cursorSpeed.toFixed(1) + 'x';
+        }
+
+        // تبديل المزامنة مع الصوت
+        function toggleSyncWithAudio() {
+            syncWithAudio = document.getElementById('syncWithAudio').checked;
+        }
+
+        // تتبع الكلمات مع الصوت
+        function startWordTracking() {
+            if (!syncWithAudio) return;
+            
+            const wordsPerSecond = (autoReadSpeed * 2.5) * cursorSpeed; // تقدير تقريبي
+            const intervalTime = 1000 / wordsPerSecond;
+            
+            autoReadInterval = setInterval(() => {
+                if (currentWordIndex < words.length - 1 && isAutoReading) {
+                    currentWordIndex++;
+                    highlightCurrentWord();
+                    updateProgress();
+                } else {
+                    clearInterval(autoReadInterval);
+                    autoReadInterval = null;
+                }
+            }, intervalTime);
+        }
+
+        // بدء القراءة
+        function startReading() {
+            if (words.length === 0) return;
+            
+            isReading = true;
+            isPaused = false;
+            
+            if (startTime === null) {
+                startTime = Date.now();
+            } else {
+                startTime = Date.now() - pausedTime;
+            }
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+            
+            startTimer();
+            highlightCurrentWord();
+        }
+
+        // بدء التسجيل الصوتي
+        async function startRecording() {
+            try {
+                // طلب إذن الميكروفون مع إعدادات جودة عالية
+                audioStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 44100,
+                        channelCount: 2
+                    }
+                });
+                
+                // استخدام أفضل تنسيق متاح
+                const options = {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 128000
+                };
+                
+                // التحقق من دعم التنسيق
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/webm';
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/mp4';
+                }
+                
+                mediaRecorder = new MediaRecorder(audioStream, options);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const mimeType = mediaRecorder.mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: mimeType });
+                    saveAudioRecording(audioBlob, mimeType);
+                };
+                
+                // بدء التسجيل مع حفظ البيانات كل ثانية
+                mediaRecorder.start(1000);
+                isRecording = true;
+                
+                // تحديث واجهة المستخدم
+                document.getElementById('recordBtn').disabled = true;
+                document.getElementById('stopRecordBtn').disabled = false;
+                document.getElementById('recordBtn').classList.add('recording-pulse');
+                document.getElementById('recordingStatus').innerHTML = 'جاري التسجيل <span class="recording-indicator"></span>';
+                
+                // بدء عداد وقت التسجيل
+                startRecordingTimer();
+                
+            } catch (error) {
+                console.error('خطأ في بدء التسجيل:', error);
+                let errorMessage = 'عذراً، لا يمكن الوصول إلى الميكروفون.';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'يرجى السماح للموقع بالوصول إلى الميكروفون من إعدادات المتصفح.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'لم يتم العثور على ميكروفون. تأكد من توصيل ميكروفون بجهازك.';
+                }
+                
+                alert(errorMessage);
+            }
+        }
+
+        // بدء عداد وقت التسجيل
+        function startRecordingTimer() {
+            recordingStartTime = Date.now();
+            recordingTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timeDisplay = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                document.getElementById('recordingStatus').innerHTML = `
+                    جاري التسجيل ${timeDisplay} <span class="recording-indicator"></span>
+                `;
+            }, 1000);
+        }
+
+        // إيقاف التسجيل الصوتي
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                audioStream.getTracks().forEach(track => track.stop());
+                isRecording = false;
+                
+                // إيقاف عداد التسجيل
+                if (recordingTimer) {
+                    clearInterval(recordingTimer);
+                    recordingTimer = null;
+                }
+                
+                // تحديث واجهة المستخدم
+                document.getElementById('recordBtn').disabled = false;
+                document.getElementById('stopRecordBtn').disabled = true;
+                document.getElementById('recordBtn').classList.remove('recording-pulse');
+                document.getElementById('recordingStatus').innerHTML = '⏳ جاري معالجة التسجيل...';
+                
+                setTimeout(() => {
+                    document.getElementById('recordingStatus').textContent = 'جاهز للتسجيل';
+                }, 3000);
+            }
+        }
+
+        // إيقاف مؤقت القراءة
+        function pauseReading() {
+            isReading = false;
+            isPaused = true;
+            pausedTime = Date.now() - startTime;
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            
+            clearInterval(timerInterval);
+        }
+
+        // إنهاء القراءة
+        function stopReading() {
+            isReading = false;
+            isPaused = false;
+            
+            const endTime = Date.now();
+            const totalTime = Math.floor((endTime - startTime) / 1000);
+            const wordsPerMinute = Math.round((currentWordIndex / totalTime) * 60);
+            
+            // حفظ الجلسة
+            saveSession(totalTime, currentWordIndex, wordsPerMinute);
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            
+            clearInterval(timerInterval);
+            
+            // عرض النتائج
+            showResults(totalTime, currentWordIndex, wordsPerMinute);
+        }
+
+        // إعادة تعيين كل شيء
+        function resetAll() {
+            resetReading();
+            loadSelectedText();
+        }
+
+        // إعادة تعيين القراءة
+        function resetReading() {
+            isReading = false;
+            isPaused = false;
+            startTime = null;
+            pausedTime = 0;
+            currentWordIndex = 0;
+            
+            // إيقاف القراءة الآلية
+            if (isAutoReading) {
+                stopAutoRead();
+            }
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            
+            clearInterval(timerInterval);
+            
+            // إعادة تعيين العرض
+            document.getElementById('timerDisplay').textContent = '00:00';
+            document.getElementById('wordsRead').textContent = '0';
+            document.getElementById('readingSpeed').textContent = '0 ك/د';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = '0%';
+            
+            // إزالة التمييز من الكلمات
+            words.forEach((_, index) => {
+                const wordElement = document.getElementById(`word-${index}`);
+                if (wordElement) {
+                    wordElement.classList.remove('word-highlight');
+                }
+            });
+        }
+
+        // بدء المؤقت
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!isReading) return;
+                
+                const currentTime = Date.now();
+                const elapsed = Math.floor((currentTime - startTime) / 1000);
+                
+                updateTimerDisplay(elapsed);
+                updateStats(elapsed);
+                updateProgress();
+                
+                // الانتقال للكلمة التالية كل ثانية
+                if (currentWordIndex < words.length - 1) {
+                    currentWordIndex++;
+                    highlightCurrentWord();
+                } else {
+                    stopReading();
+                }
+            }, 1000);
+        }
+
+        // تحديث عرض المؤقت
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('timerDisplay').textContent = display;
+            
+            // تحديث الدائرة
+            const circumference = 283;
+            const progress = (seconds % 60) / 60;
+            const offset = circumference - (progress * circumference);
+            document.getElementById('timerCircle').style.strokeDashoffset = offset;
+        }
+
+        // تحديث الإحصائيات
+        function updateStats(elapsed) {
+            document.getElementById('wordsRead').textContent = currentWordIndex;
+            
+            if (elapsed > 0) {
+                const wordsPerMinute = Math.round((currentWordIndex / elapsed) * 60);
+                document.getElementById('readingSpeed').textContent = wordsPerMinute + ' ك/د';
+            }
+        }
+
+        // تحديث شريط التقدم
+        function updateProgress() {
+            const progress = (currentWordIndex / words.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = Math.round(progress) + '%';
+        }
+
+        // تمييز الكلمة الحالية
+        function highlightCurrentWord() {
+            // إزالة التمييز من الكلمة السابقة
+            if (currentWordIndex > 0) {
+                const prevWord = document.getElementById(`word-${currentWordIndex - 1}`);
+                if (prevWord) {
+                    prevWord.classList.remove('word-highlight');
+                }
+            }
+            
+            // تمييز الكلمة الحالية
+            const currentWord = document.getElementById(`word-${currentWordIndex}`);
+            if (currentWord) {
+                currentWord.classList.add('word-highlight');
+                currentWord.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // حفظ الجلسة
+        function saveSession(duration, wordsRead, wpm) {
+            const progress = Math.round((wordsRead / words.length) * 100);
+            const session = {
+                date: new Date().toLocaleDateString('ar-SA'),
+                time: new Date().toLocaleTimeString('ar-SA'),
+                text: texts[currentTextIndex].title,
+                duration: duration,
+                wordsRead: wordsRead,
+                wpm: wpm,
+                progress: progress
+            };
+            
+            sessions.unshift(session);
+            if (sessions.length > 10) sessions.pop(); // الاحتفاظ بآخر 10 جلسات
+            
+            // إضافة البيانات للمخططات البيانية
+            updateSpeedChart(wpm);
+            updateProgressChart(progress);
+            
+            updateSessionHistory();
+        }
+
+        // حفظ التسجيل الصوتي
+        function saveAudioRecording(audioBlob, mimeType) {
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const currentTime = Date.now();
+            const recordingDuration = recordingStartTime ? Math.floor((currentTime - recordingStartTime) / 1000) : 0;
+            
+            // تحديد امتداد الملف حسب نوع الصوت
+            let fileExtension = 'webm';
+            if (mimeType.includes('mp4')) fileExtension = 'mp4';
+            else if (mimeType.includes('wav')) fileExtension = 'wav';
+            else if (mimeType.includes('ogg')) fileExtension = 'ogg';
+            
+            const recording = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ar-SA'),
+                time: new Date().toLocaleTimeString('ar-SA'),
+                text: texts[currentTextIndex].title,
+                audioUrl: audioUrl,
+                audioBlob: audioBlob,
+                mimeType: mimeType,
+                fileExtension: fileExtension,
+                duration: recordingDuration,
+                size: Math.round(audioBlob.size / 1024), // بالكيلوبايت
+                wordsRead: currentWordIndex,
+                wpm: recordingDuration > 0 ? Math.round((currentWordIndex / recordingDuration) * 60) : 0,
+                quality: audioBlob.size > 100000 ? 'عالية' : audioBlob.size > 50000 ? 'متوسطة' : 'منخفضة'
+            };
+            
+            // حفظ في IndexedDB للتخزين الدائم
+            saveToIndexedDB(recording);
+            
+            // تحميل تلقائي للملف
+            downloadRecording(audioUrl, recording.text, recording.date, fileExtension);
+            
+            // إضافة للقائمة المؤقتة
+            if (!window.audioRecordings) window.audioRecordings = [];
+            window.audioRecordings.unshift(recording);
+            if (window.audioRecordings.length > 20) {
+                const oldRecording = window.audioRecordings.pop();
+                URL.revokeObjectURL(oldRecording.audioUrl);
+            }
+            
+            updateAudioRecordings();
+            
+            // إشعار بنجاح الحفظ
+            showNotification('✅ تم حفظ التسجيل بنجاح على جهازك!', 'success');
+        }
+
+        // تحديث قائمة التسجيلات الصوتية
+        function updateAudioRecordings() {
+            const recordingsDiv = document.getElementById('audioRecordings');
+            const recordings = window.audioRecordings || [];
+            
+            if (recordings.length === 0) {
+                recordingsDiv.innerHTML = '<div class="text-center text-gray-500 py-4">لا توجد تسجيلات صوتية بعد</div>';
+                return;
+            }
+            
+            recordingsDiv.innerHTML = recordings.map(recording => `
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-sm font-bold text-gray-800">${recording.text}</div>
+                        <div class="text-xs text-gray-500">${recording.date}</div>
+                    </div>
+                    <div class="mb-3">
+                        <audio controls class="w-full h-8" style="height: 32px;">
+                            <source src="${recording.audioUrl}" type="audio/wav">
+                            متصفحك لا يدعم تشغيل الصوت
+                        </audio>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                        <div><span class="text-gray-600">المدة:</span> <span class="font-bold">${Math.floor(recording.duration / 60)}:${(recording.duration % 60).toString().padStart(2, '0')}</span></div>
+                        <div><span class="text-gray-600">الحجم:</span> <span class="font-bold">${recording.size} ك.ب</span></div>
+                        <div><span class="text-gray-600">الكلمات:</span> <span class="font-bold">${recording.wordsRead || 0}</span></div>
+                        <div><span class="text-gray-600">السرعة:</span> <span class="font-bold">${recording.wpm || 0} ك/د</span></div>
+                        <div><span class="text-gray-600">الجودة:</span> <span class="font-bold">${recording.quality || 'متوسطة'}</span></div>
+                        <div><span class="text-gray-600">النوع:</span> <span class="font-bold">${recording.fileExtension?.toUpperCase() || 'WEBM'}</span></div>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="downloadRecording('${recording.audioUrl}', '${recording.text}', '${recording.date}', '${recording.fileExtension || 'webm'}')" class="btn-gradient text-white px-3 py-1 rounded text-xs">
+                            💾 تحميل مرة أخرى
+                        </button>
+                        <button onclick="deleteRecording(${recording.id})" class="btn-danger text-white px-3 py-1 rounded text-xs">
+                            🗑️ حذف
+                        </button>
+                        <button onclick="shareRecording(${recording.id})" class="btn-success text-white px-3 py-1 rounded text-xs">
+                            📤 مشاركة
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // تحميل التسجيل
+        function downloadRecording(audioUrl, textTitle, date, fileExtension = 'webm') {
+            const link = document.createElement('a');
+            link.href = audioUrl;
+            
+            // تنظيف اسم الملف من الأحرف الخاصة
+            const cleanTitle = textTitle.replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s]/g, '');
+            const cleanDate = date.replace(/[^\d-]/g, '-');
+            const timestamp = new Date().toISOString().slice(11, 19).replace(/:/g, '-');
+            
+            link.download = `تسجيل_قراءة_${cleanTitle}_${cleanDate}_${timestamp}.${fileExtension}`;
+            
+            // إضافة الرابط للصفحة وتفعيله ثم حذفه
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log(`تم تحميل الملف: ${link.download}`);
+        }
+
+        // حذف التسجيل
+        async function deleteRecording(recordingId) {
+            if (confirm('هل أنت متأكد من حذف هذا التسجيل؟')) {
+                const recordings = window.audioRecordings || [];
+                const recordingIndex = recordings.findIndex(r => r.id === recordingId);
+                
+                if (recordingIndex !== -1) {
+                    // تحرير الذاكرة
+                    URL.revokeObjectURL(recordings[recordingIndex].audioUrl);
+                    recordings.splice(recordingIndex, 1);
+                    
+                    // حذف من IndexedDB
+                    try {
+                        const db = await initIndexedDB();
+                        const transaction = db.transaction(['recordings'], 'readwrite');
+                        const store = transaction.objectStore('recordings');
+                        await store.delete(recordingId);
+                    } catch (error) {
+                        console.error('خطأ في حذف التسجيل:', error);
+                    }
+                    
+                    updateAudioRecordings();
+                }
+            }
+        }
+
+        // مشاركة التسجيل
+        function shareRecording(recordingId) {
+            const recording = window.audioRecordings.find(r => r.id === recordingId);
+            if (!recording) return;
+            
+            if (navigator.share) {
+                // استخدام Web Share API إذا كان متاحاً
+                navigator.share({
+                    title: `تسجيل قراءة - ${recording.text}`,
+                    text: `تسجيل قراءة لنص "${recording.text}" - المدة: ${Math.floor(recording.duration / 60)}:${(recording.duration % 60).toString().padStart(2, '0')} - السرعة: ${recording.wpm} كلمة/دقيقة`,
+                    files: [new File([recording.audioBlob], `تسجيل_${recording.text}_${recording.date.replace(/\//g, '-')}.wav`, { type: 'audio/wav' })]
+                }).catch(error => {
+                    console.log('خطأ في المشاركة:', error);
+                    fallbackShare(recording);
+                });
+            } else {
+                fallbackShare(recording);
+            }
+        }
+
+        // مشاركة بديلة
+        function fallbackShare(recording) {
+            const shareText = `تسجيل قراءة لنص "${recording.text}"\nالمدة: ${Math.floor(recording.duration / 60)}:${(recording.duration % 60).toString().padStart(2, '0')}\nالسرعة: ${recording.wpm} كلمة/دقيقة\nالكلمات المقروءة: ${recording.wordsRead}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('تم نسخ معلومات التسجيل إلى الحافظة! يمكنك الآن لصقها ومشاركتها.');
+                });
+            } else {
+                // عرض النص في نافذة منبثقة للنسخ اليدوي
+                prompt('انسخ هذا النص للمشاركة:', shareText);
+            }
+        }
+
+        // تحديث سجل الجلسات
+        function updateSessionHistory() {
+            const historyDiv = document.getElementById('sessionHistory');
+            
+            if (sessions.length === 0) {
+                historyDiv.innerHTML = '<div class="text-center text-gray-500 py-4">لا توجد جلسات مسجلة بعد</div>';
+                return;
+            }
+            
+            historyDiv.innerHTML = sessions.map(session => `
+                <div class="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="text-sm font-bold text-gray-800">${session.text}</div>
+                        <div class="text-xs text-gray-500">${session.date}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div><span class="text-gray-600">المدة:</span> <span class="font-bold">${Math.floor(session.duration / 60)}:${(session.duration % 60).toString().padStart(2, '0')}</span></div>
+                        <div><span class="text-gray-600">السرعة:</span> <span class="font-bold">${session.wpm} ك/د</span></div>
+                        <div><span class="text-gray-600">الكلمات:</span> <span class="font-bold">${session.wordsRead}</span></div>
+                        <div><span class="text-gray-600">التقدم:</span> <span class="font-bold">${session.progress}%</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // عرض النتائج
+        function showResults(duration, wordsRead, wpm) {
+            const minutes = Math.floor(duration / 60);
+            const seconds = duration % 60;
+            const progress = Math.round((wordsRead / words.length) * 100);
+            
+            // إضافة تأثير الاحتفال
+            document.querySelector('.timer-container').classList.add('celebration');
+            setTimeout(() => {
+                document.querySelector('.timer-container').classList.remove('celebration');
+            }, 600);
+            
+            alert(`🎉 تهانينا! لقد أنهيت جلسة القراءة\n\n⏱️ المدة: ${minutes}:${seconds.toString().padStart(2, '0')}\n📖 الكلمات المقروءة: ${wordsRead}\n🚀 السرعة: ${wpm} كلمة/دقيقة\n📊 التقدم: ${progress}%`);
+        }
+
+        // تهيئة المخططات البيانية
+        function initializeCharts() {
+            // تهيئة مخطط السرعة
+            const speedCtx = document.getElementById('speedChart').getContext('2d');
+            const savedSpeedData = JSON.parse(localStorage.getItem('speedChartData') || '{"labels":[],"data":[]}');
+            speedChartData.labels = savedSpeedData.labels || [];
+            speedChartData.datasets[0].data = savedSpeedData.data || [];
+            
+            speedChart = new Chart(speedCtx, {
+                type: 'line',
+                data: speedChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'كلمة/دقيقة',
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'الجلسات',
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // تهيئة مخطط التقدم
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            const savedProgressData = JSON.parse(localStorage.getItem('progressChartData') || '{"labels":[],"data":[]}');
+            progressChartData.labels = savedProgressData.labels || [];
+            progressChartData.datasets[0].data = savedProgressData.data || [];
+            
+            progressChart = new Chart(progressCtx, {
+                type: 'bar',
+                data: progressChartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'نسبة التقدم (%)',
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'الجلسات',
+                                font: {
+                                    family: 'Cairo, Tajawal, sans-serif',
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // تحديث مخطط السرعة
+        function updateSpeedChart(wpm) {
+            const sessionNumber = speedChartData.labels.length + 1;
+            speedChartData.labels.push(`جلسة ${sessionNumber}`);
+            speedChartData.datasets[0].data.push(wpm);
+            
+            // الاحتفاظ بآخر 15 جلسة فقط
+            if (speedChartData.labels.length > 15) {
+                speedChartData.labels.shift();
+                speedChartData.datasets[0].data.shift();
+            }
+            
+            speedChart.update();
+            
+            // حفظ البيانات
+            localStorage.setItem('speedChartData', JSON.stringify({
+                labels: speedChartData.labels,
+                data: speedChartData.datasets[0].data
+            }));
+        }
+
+        // تحديث مخطط التقدم
+        function updateProgressChart(progress) {
+            const sessionNumber = progressChartData.labels.length + 1;
+            progressChartData.labels.push(`جلسة ${sessionNumber}`);
+            progressChartData.datasets[0].data.push(progress);
+            
+            // الاحتفاظ بآخر 15 جلسة فقط
+            if (progressChartData.labels.length > 15) {
+                progressChartData.labels.shift();
+                progressChartData.datasets[0].data.shift();
+            }
+            
+            progressChart.update();
+            
+            // حفظ البيانات
+            localStorage.setItem('progressChartData', JSON.stringify({
+                labels: progressChartData.labels,
+                data: progressChartData.datasets[0].data
+            }));
+        }
+
+        // مسح بيانات مخطط السرعة
+        function clearSpeedChartData() {
+            if (confirm('هل أنت متأكد من مسح جميع بيانات مخطط السرعة؟')) {
+                speedChartData.labels = [];
+                speedChartData.datasets[0].data = [];
+                speedChart.update();
+                localStorage.removeItem('speedChartData');
+            }
+        }
+
+        // مسح بيانات مخطط التقدم
+        function clearProgressChartData() {
+            if (confirm('هل أنت متأكد من مسح جميع بيانات مخطط التقدم؟')) {
+                progressChartData.labels = [];
+                progressChartData.datasets[0].data = [];
+                progressChart.update();
+                localStorage.removeItem('progressChartData');
+            }
+        }
+
+        // تهيئة IndexedDB
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('ReadingRecordings', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('recordings')) {
+                        const store = db.createObjectStore('recordings', { keyPath: 'id' });
+                        store.createIndex('date', 'date', { unique: false });
+                    }
+                };
+            });
+        }
+
+        // حفظ في IndexedDB
+        async function saveToIndexedDB(recording) {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction(['recordings'], 'readwrite');
+                const store = transaction.objectStore('recordings');
+                
+                // تحويل audioBlob إلى ArrayBuffer للحفظ
+                const arrayBuffer = await recording.audioBlob.arrayBuffer();
+                const recordingToSave = {
+                    ...recording,
+                    audioData: arrayBuffer,
+                    audioBlob: null, // لا نحفظ الـ blob مباشرة
+                    audioUrl: null   // لا نحفظ الـ URL
+                };
+                
+                await store.add(recordingToSave);
+            } catch (error) {
+                console.error('خطأ في حفظ التسجيل:', error);
+            }
+        }
+
+        // تحميل التسجيلات من IndexedDB
+        async function loadFromIndexedDB() {
+            try {
+                const db = await initIndexedDB();
+                const transaction = db.transaction(['recordings'], 'readonly');
+                const store = transaction.objectStore('recordings');
+                const request = store.getAll();
+                
+                return new Promise((resolve, reject) => {
+                    request.onsuccess = () => {
+                        const recordings = request.result.map(recording => {
+                            // تحويل ArrayBuffer إلى Blob
+                            const audioBlob = new Blob([recording.audioData], { type: 'audio/wav' });
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            
+                            return {
+                                ...recording,
+                                audioBlob: audioBlob,
+                                audioUrl: audioUrl
+                            };
+                        });
+                        resolve(recordings);
+                    };
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (error) {
+                console.error('خطأ في تحميل التسجيلات:', error);
+                return [];
+            }
+        }
+
+        // عرض الإشعارات
+        function showNotification(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+            
+            notification.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 max-w-sm`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span class="font-medium">${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-white hover:text-gray-200">
+                        ✕
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // إظهار الإشعار
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // إخفاء الإشعار تلقائياً
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        // تحميل الأصوات المتاحة
+        function loadVoices() {
+            return new Promise((resolve) => {
+                let voices = speechSynthesis.getVoices();
+                
+                if (voices.length > 0) {
+                    resolve(voices);
+                } else {
+                    // انتظار تحميل الأصوات
+                    speechSynthesis.onvoiceschanged = () => {
+                        voices = speechSynthesis.getVoices();
+                        resolve(voices);
+                    };
+                    
+                    // انتظار إضافي في حالة عدم تفعيل الحدث
+                    setTimeout(() => {
+                        voices = speechSynthesis.getVoices();
+                        resolve(voices);
+                    }, 1000);
+                }
+            });
+        }
+
+        // عرض الأصوات المتاحة
+        async function showAvailableVoices() {
+            const voices = await loadVoices();
+            availableVoices = voices;
+            
+            const arabicVoices = voices.filter(voice => 
+                voice.lang.includes('ar') || 
+                voice.name.includes('Arabic') ||
+                voice.name.includes('عربي')
+            );
+            
+            console.log('الأصوات العربية المتاحة:', arabicVoices);
+            console.log('جميع الأصوات المتاحة:', voices.length);
+            
+            // تحديث قائمة الأصوات
+            updateVoiceSelect(voices, arabicVoices);
+            
+            if (arabicVoices.length > 0) {
+                showNotification(`✅ تم العثور على ${arabicVoices.length} صوت عربي`, 'success', 3000);
+                // اختيار أول صوت عربي كافتراضي
+                selectedVoice = arabicVoices[0];
+            } else {
+                showNotification('⚠️ لم يتم العثور على أصوات عربية، سيتم استخدام الصوت الافتراضي', 'warning', 4000);
+            }
+        }
+
+        // تحديث قائمة اختيار الأصوات
+        function updateVoiceSelect(allVoices, arabicVoices) {
+            const voiceSelect = document.getElementById('voiceSelect');
+            voiceSelect.innerHTML = '';
+            
+            // إضافة خيار افتراضي
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'الصوت الافتراضي';
+            voiceSelect.appendChild(defaultOption);
+            
+            // إضافة الأصوات العربية أولاً
+            if (arabicVoices.length > 0) {
+                const arabicGroup = document.createElement('optgroup');
+                arabicGroup.label = 'الأصوات العربية';
+                
+                arabicVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = index + '_arabic';
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    if (index === 0) option.selected = true; // اختيار أول صوت عربي
+                    arabicGroup.appendChild(option);
+                });
+                
+                voiceSelect.appendChild(arabicGroup);
+            }
+            
+            // إضافة باقي الأصوات
+            const otherVoices = allVoices.filter(voice => 
+                !voice.lang.includes('ar') && 
+                !voice.name.includes('Arabic') &&
+                !voice.name.includes('عربي')
+            );
+            
+            if (otherVoices.length > 0) {
+                const otherGroup = document.createElement('optgroup');
+                otherGroup.label = 'أصوات أخرى';
+                
+                otherVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = (index + arabicVoices.length) + '_other';
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    otherGroup.appendChild(option);
+                });
+                
+                voiceSelect.appendChild(otherGroup);
+            }
+        }
+
+        // تحديث الصوت المحدد
+        function updateSelectedVoice() {
+            const voiceSelect = document.getElementById('voiceSelect');
+            const selectedValue = voiceSelect.value;
+            
+            if (!selectedValue) {
+                selectedVoice = null;
+                return;
+            }
+            
+            const [indexStr, type] = selectedValue.split('_');
+            const index = parseInt(indexStr);
+            
+            if (type === 'arabic') {
+                const arabicVoices = availableVoices.filter(voice => 
+                    voice.lang.includes('ar') || 
+                    voice.name.includes('Arabic') ||
+                    voice.name.includes('عربي')
+                );
+                selectedVoice = arabicVoices[index];
+            } else {
+                const otherVoices = availableVoices.filter(voice => 
+                    !voice.lang.includes('ar') && 
+                    !voice.name.includes('Arabic') &&
+                    !voice.name.includes('عربي')
+                );
+                selectedVoice = otherVoices[index];
+            }
+            
+            console.log('تم تحديد الصوت:', selectedVoice?.name);
+        }
+
+        // اختبار الصوت المحدد
+        function testVoice() {
+            if (isAutoReading) {
+                showNotification('⚠️ يرجى إيقاف القراءة الآلية أولاً', 'warning');
+                return;
+            }
+            
+            const testText = 'مرحباً، هذا اختبار للصوت المحدد';
+            const testUtterance = new SpeechSynthesisUtterance(testText);
+            
+            testUtterance.lang = 'ar-SA';
+            testUtterance.rate = autoReadSpeed;
+            testUtterance.pitch = 1.0;
+            testUtterance.volume = 1.0;
+            
+            if (selectedVoice) {
+                testUtterance.voice = selectedVoice;
+            }
+            
+            testUtterance.onstart = () => {
+                showNotification('🎵 جاري اختبار الصوت...', 'info', 2000);
+            };
+            
+            testUtterance.onend = () => {
+                showNotification('✅ انتهى اختبار الصوت', 'success', 2000);
+            };
+            
+            testUtterance.onerror = (event) => {
+                showNotification('❌ خطأ في اختبار الصوت: ' + event.error, 'error');
+            };
+            
+            speechSynthesis.speak(testUtterance);
+        }
+
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', async function() {
+            loadSelectedText();
+            
+            // تهيئة المخططات البيانية
+            initializeCharts();
+            
+            // تحميل التسجيلات المحفوظة
+            window.audioRecordings = await loadFromIndexedDB();
+            updateAudioRecordings();
+            
+            // تحميل وعرض الأصوات المتاحة
+            await showAvailableVoices();
+            
+            // إشعار ترحيبي
+            setTimeout(() => {
+                showNotification('🎙️ مرحباً! يمكنك الآن استخدام القراءة الآلية والتسجيل وحفظ الملفات على جهازك', 'info', 6000);
+            }, 2000);
+            
+            // إضافة مستمعي الأحداث للوحة المفاتيح
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (!isReading && !isPaused) {
+                        startReading();
+                    } else if (isReading) {
+                        pauseReading();
+                    } else if (isPaused) {
+                        startReading();
+                    }
+                } else if (e.code === 'Escape') {
+                    stopReading();
+                } else if (e.code === 'KeyR' && e.ctrlKey) {
+                    e.preventDefault();
+                    if (!isRecording) {
+                        startRecording();
+                    } else {
+                        stopRecording();
+                    }
+                } else if (e.code === 'KeyA' && e.ctrlKey) {
+                    e.preventDefault();
+                    toggleAutoRead();
+                }
+            });
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'974d8a0f979be70c',t:'MTc1NjE1MDU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
